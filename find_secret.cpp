@@ -9,7 +9,7 @@ struct BigInt {
     static const int BASE = 1000000000;
     static const int BASE_DIGITS = 9;
 
-    vector<int> a; // little endian, each element < BASE
+    vector<int> a; // little endian representation
     bool negative;
 
     BigInt(): negative(false) {}
@@ -48,7 +48,7 @@ struct BigInt {
     void trim() {
         while(!a.empty() && a.back() == 0)
             a.pop_back();
-        if(a.empty())
+        if (a.empty())
             negative = false;
     }
 
@@ -59,8 +59,9 @@ struct BigInt {
             return;
         }
         cout << a.back();
-        for(int i=(int)a.size()-2; i>=0; i--)
+        for(int i = (int)a.size()-2; i >= 0; i--) {
             cout << setw(BASE_DIGITS) << setfill('0') << a[i];
+        }
     }
 
     bool isZero() const {
@@ -86,9 +87,11 @@ struct BigInt {
     bool operator>(const BigInt &b) const {
         return b < *this;
     }
+
     bool operator<=(const BigInt &b) const {
         return !(b < *this);
     }
+
     bool operator>=(const BigInt &b) const {
         return !(*this < b);
     }
@@ -138,7 +141,7 @@ struct BigInt {
         return res;
     }
 
-    // Division by int (long long fits inside int for denominators)
+    // Division by int
     pair<BigInt,int> divmod(int v) const {
         long long rem = 0;
         BigInt res;
@@ -197,7 +200,7 @@ private:
     }
 };
 
-// Decode a string with given base into BigInt
+// Decode a string with specified base into BigInt
 BigInt decode(const string& value, int base) {
     static const string digits = "0123456789abcdefghijklmnopqrstuvwxyz";
     BigInt res = 0;
@@ -212,7 +215,7 @@ BigInt decode(const string& value, int base) {
     return res;
 }
 
-// Integer-only Lagrange interpolation at x=0
+// Integer-only Lagrange interpolation f(0) with exact division
 BigInt lagrange_interpolate_at_zero(const vector<pair<BigInt, BigInt>> &points) {
     int k = (int)points.size();
     BigInt secret = 0;
@@ -225,7 +228,7 @@ BigInt lagrange_interpolate_at_zero(const vector<pair<BigInt, BigInt>> &points) 
             denominator = denominator * (points[j].first - points[m].first);
         }
 
-        // denominator should fit in long (small integers from differences)
+        // denominator fits in 64-bit int due to small root differences
         long long denom64 = 1;
         bool denom_neg = false;
         for(int m=0; m<k; m++) {
@@ -235,7 +238,6 @@ BigInt lagrange_interpolate_at_zero(const vector<pair<BigInt, BigInt>> &points) 
                 denom_neg = !denom_neg;
                 diff = diff.abs();
             }
-            // Extract integer from BigInt (should fit in 64-bit)
             long long val = 0;
             for(int z = (int)diff.a.size()-1; z >= 0; z--) {
                 val = val * BigInt::BASE + diff.a[z];
@@ -250,7 +252,7 @@ BigInt lagrange_interpolate_at_zero(const vector<pair<BigInt, BigInt>> &points) 
 
         auto divmod = numerator.divmod((int)(denom64));
         if(divmod.second != 0) {
-            cerr << "Non exact division encountered in Lagrange interpolation!" << endl;
+            cerr << "Non-exact division encountered in Lagrange interpolation!" << endl;
             exit(1);
         }
         secret = secret + divmod.first;
@@ -278,6 +280,7 @@ int main() {
 
         vector<pair<BigInt, BigInt>> points;
 
+        // Collect keys sorted by their integer value
         vector<int> keys_available;
         for (auto it = j.begin(); it != j.end(); ++it) {
             if(it.key() != "keys") {
